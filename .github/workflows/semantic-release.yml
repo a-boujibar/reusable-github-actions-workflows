@@ -1,0 +1,115 @@
+name: Semantic Release
+
+permissions: write-all
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        description: |
+          The target language (node or java or none)
+        default: 'java'
+        required: false
+        type: string
+
+      java-version:
+        description: |
+          The java version you want to use to run this workflow
+        default: '11'
+        required: false
+        type: string
+
+      java-distribution:
+        description: |
+          The java version distribution you want to use to run this workflow
+        default: 'adopt'
+        required: false
+        type: string
+
+      node-version:
+        description: |
+          The node version of the source code need
+        default: '14'
+        required: false
+        type: string
+
+    outputs:
+      released-version:
+        description: "The new version released by this workflow"
+        value: ${{ jobs.release.outputs.new_release_version }}
+
+      released-notes:
+        description: "The released notes produced by this workflow"
+        value: ${{ jobs.release.outputs.new_release_notes }}
+
+      new-version-published:
+        description: "Whether a new release was published. The return value is in the form of a string. (true or false)"
+        value: ${{ jobs.release.outputs.new_version_published }}
+
+jobs:
+  release:
+    runs-on: [ubuntu-latest, self-hosted, standard]
+    outputs:
+      new_release_version: ${{ steps.export-released-version.outputs.new_release_version }}
+      new_release_notes: ${{ steps.export-released-version.outputs.new_release_notes }}
+      new_version_published: ${{ steps.export-released-version.outputs.new_version_published }}
+
+    steps:
+
+      - name: Checkout the latest code
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Set Up Node
+        if: ${{ inputs.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ imputs.node-version }}
+
+      - name: Set Up Java
+        if: ${{ inputs.language == 'java' }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ inputs.java-verion }}
+          distribution: ${{ inputs.java-distribution }}
+
+      - name: Configure Git User
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "Semantic Release Actions"
+
+      - name: Semantic Release Github
+          id: semantic-release-default
+          uses: cycjimmy/semantic-release-action@v3
+          with:
+            # You can specify specifying version range for the extra plugins if you prefer.
+            extra_plugins: |
+              @semantic-release/changelog@3.0.0
+              @semantic-release/git
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Export released version
+          id: export-released-version
+          run: |
+            if [ "${{ steps.semantic-release-default.outputs.new_release_version }}" != "" ] ;
+            then echo "new_release_version=${{ steps.semantic-release-default.outputs.new_release_version }}" >> $GITHUB_OUTPUT ;
+            fi
+
+          - name: export new publish version
+              id: export-new-published-version
+              run: |
+                if [ "${{ steps.semantic-release-default.outputs.new_release_published }}" != "" ] ;
+                  then echo "new_version_published=${{ steps.semantic-release-default.outputs.new_release_published }}" >> $GITHUB_OUTPUT ;
+                fi
+          - name: export release notes
+              id: export-released-notes
+              run: |
+                if [ "${{ steps.semantic-release-default.outputs.new_release_notes }}" != "" ] ; then
+                  RELEASE_NOTES="${{ steps.semantic-release-default.outputs.new_release_notes }}"
+                  RELEASE_NOTES="${RELEASE_NOTES//'%'/'%25'}"
+                  RELEASE_NOTES="${RELEASE_NOTES//$'\r'/'%0D'}"
+                  RELEASE_NOTES="$(echo "$RELEASE_NOTES" | sed -z 's/\n/\\n/g')"
+                  echo "new_release_notes=${RELEASE_NOTES}" >> $GITHUB_OUTPUT ;
+                fi
