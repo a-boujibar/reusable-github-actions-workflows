@@ -55,7 +55,6 @@ jobs:
       new_version_published: ${{ steps.export-released-version.outputs.new_version_published }}
 
     steps:
-
       - name: Checkout the latest code
         uses: actions/checkout@v3
         with:
