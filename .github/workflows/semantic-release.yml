@@ -55,6 +55,7 @@ jobs:
       new_version_published: ${{ steps.export-released-version.outputs.new_version_published }}
 
     steps:
+
       - name: Checkout the latest code
         uses: actions/checkout@v3
         with:
@@ -64,7 +65,7 @@ jobs:
         if: ${{ inputs.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ imputs.node-version }}
+          node-version: ${{ inputs.node-version }}
 
       - name: Set Up Java
         if: ${{ inputs.language == 'java' }}
