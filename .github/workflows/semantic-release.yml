@@ -86,7 +86,7 @@ jobs:
           extra_plugins: |
             @semantic-release/changelog@3.0.0
             @semantic-release/git
-          env:
+          env: |
             GITHUB_TOKEN: ${{ secrets.WORKFLOWS_TOKEN }}
 
       - name: Export released version
