@@ -48,7 +48,7 @@ on:
 
 jobs:
   release:
-    runs-on: [ubuntu-latest, self-hosted, standard]
+    runs-on: ubuntu-latest
     outputs:
       new_release_version: ${{ steps.export-released-version.outputs.new_release_version }}
       new_release_notes: ${{ steps.export-released-version.outputs.new_release_notes }}
